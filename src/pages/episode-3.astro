@@ -1,0 +1,31 @@
+---
+import Layout from '../layouts/Layout.astro';
+import FeedbackWidget from '../components/FeedbackWidget.astro';
+---
+<Layout title="Episode 3 Lesson">
+  <h1>Episode 3 lesson: trust the pipeline, not the prompt</h1>
+  <p>
+    Episode 3 focuses on the work that happens after AI drafts code. The lesson is simple:
+    AI can accelerate implementation, but trustworthy shipping comes from review, security
+    checks, and deployment gates that make every change observable.
+  </p>
+
+  <div class="card">
+    <strong>Talking point.</strong> Treat AI output as a starting point, then let independent
+    controls decide whether the change is ready to ship.
+  </div>
+
+  <h2>Three questions before shipping</h2>
+  <ul>
+    <li><strong>Review:</strong> Did a separate reviewer inspect the change and its intent?</li>
+    <li><strong>Secure:</strong> Did dependency, secret, and workflow checks run before release?</li>
+    <li><strong>Deploy:</strong> Did automation promote only the version that passed those gates?</li>
+  </ul>
+
+  <p>
+    This demo site models that loop: an issue creates a change, review and security checks
+    harden it, and GitHub Actions handles the path to GitHub Pages.
+  </p>
+
+  <FeedbackWidget />
+</Layout>

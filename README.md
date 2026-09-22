@@ -45,6 +45,12 @@ npm run dev
 The start state contains deliberate training findings. Local execution is suitable for learning;
 do not deploy it as a production application. `npm run build` creates the static site in `dist/`.
 
+The reviewed feedback widget accepts an optional name (up to 80 characters), a required message
+(up to 2,000 characters), and one of the displayed topics. Text is trimmed before storage.
+Each browser can store at most 100 submissions; invalid input or unavailable/full storage shows
+an error without clearing the form. Older submissions without a topic display as General feedback.
+Run the feedback regression tests with `node --test scripts/feedback.test.mjs`.
+
 ## Repository structure
 
 ```text

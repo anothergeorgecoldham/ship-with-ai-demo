@@ -2,36 +2,30 @@
 // Feedback / questions widget — the one interactive, code-bearing feature
 // on the site. Client-side only (works on static GitHub Pages, no backend).
 //
-// Carries two intentionally seeded issues for the live demo — do not fix:
-//   - §5.1: renders submissions with `marked` 0.3.19, which has known
-//     regular-expression denial-of-service vulnerabilities. Flagged by Dependabot.
-//   - §5.5: the submit handler (src/lib/feedback.js) has no input validation.
-//     Flagged by Copilot Code Review.
+// The outdated marked dependency remains for the separate Dependabot demo step.
+import { FEEDBACK_TOPICS, MAX_NAME_LENGTH, MAX_MESSAGE_LENGTH } from '../lib/feedback.js';
 ---
 <section class="card" id="feedback-widget">
   <h2>Questions &amp; feedback</h2>
   <p>Leave a question or comment about this session — it renders below, right in your browser.</p>
   <form id="feedback-form">
     <div class="field">
-      <label for="feedback-name">Name</label>
-      <input id="feedback-name" name="name" type="text" placeholder="Ada" />
+      <label for="feedback-name">Name (optional)</label>
+      <input id="feedback-name" name="name" type="text" placeholder="Ada" maxlength={MAX_NAME_LENGTH} />
     </div>
     <div class="field">
       <label for="feedback-topic">Topic</label>
       <select id="feedback-topic" name="topic">
-        <option value="General feedback">General feedback</option>
-        <option value="Episode 3 lesson">Episode 3 lesson</option>
-        <option value="Code review">Code review</option>
-        <option value="Security">Security</option>
-        <option value="Deployment">Deployment</option>
+        {FEEDBACK_TOPICS.map((topic) => <option value={topic}>{topic}</option>)}
       </select>
     </div>
     <div class="field">
       <label for="feedback-message">Message (Markdown supported)</label>
-      <textarea id="feedback-message" name="message" rows="3" placeholder="What did you think?"></textarea>
+      <textarea id="feedback-message" name="message" rows="3" placeholder="What did you think?" required maxlength={MAX_MESSAGE_LENGTH}></textarea>
     </div>
     <button type="submit">Submit</button>
   </form>
+  <p id="feedback-error" role="alert" hidden></p>
   <div id="feedback-list" aria-live="polite"></div>
 </section>
 
@@ -77,7 +71,7 @@
   // The intentionally outdated renderer is genuinely used here. Rendering
   // untrusted Markdown without sanitising its HTML is a separate optional beat.
   import * as markedModule from 'marked';
-  import { loadSubmissions, saveSubmission } from '../lib/feedback.js';
+  import { FEEDBACK_TOPICS, loadSubmissions, saveSubmission } from '../lib/feedback.js';
   import { FEEDBACK_ANALYTICS_TOKEN } from '../lib/analytics-config.js';
 
   const renderMarkdown =
@@ -89,14 +83,23 @@
 
   const form = document.getElementById('feedback-form');
   const list = document.getElementById('feedback-list');
-  const topicSelect = document.getElementById('feedback-topic');
-  const topics = topicSelect instanceof HTMLSelectElement
-    ? new Set(Array.from(topicSelect.options, (option) => option.value))
-    : new Set();
-  const fallbackTopic = topicSelect instanceof HTMLSelectElement ? topicSelect.value : '';
+  const errorMessage = document.getElementById('feedback-error');
+  const topics = new Set(FEEDBACK_TOPICS);
+  const fallbackTopic = FEEDBACK_TOPICS[0];
+
+  function showError(error: unknown) {
+    console.error('Feedback failed:', error);
+    if (errorMessage) {
+      errorMessage.textContent = error instanceof Error
+        ? error.message
+        : 'Unable to access feedback in this browser. Check browser storage and try again.';
+      errorMessage.hidden = false;
+    }
+  }
 
   function render() {
     const submissions = loadSubmissions();
+    if (!list) return;
     list.innerHTML = submissions
       .slice()
       .reverse()
@@ -113,14 +116,24 @@
 
   form?.addEventListener('submit', (event) => {
     event.preventDefault();
+    if (!(form instanceof HTMLFormElement)) return;
     const data = new FormData(form);
     const name = data.get('name');
     const topic = data.get('topic');
     const message = data.get('message');
-    saveSubmission(name, message, topic);
-    form.reset();
-    render();
+    try {
+      saveSubmission(name, message, topic);
+      render();
+      form.reset();
+      if (errorMessage) errorMessage.hidden = true;
+    } catch (error) {
+      showError(error);
+    }
   });
 
-  render();
+  try {
+    render();
+  } catch (error) {
+    showError(error);
+  }
 </script>

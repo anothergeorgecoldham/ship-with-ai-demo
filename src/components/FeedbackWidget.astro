@@ -19,11 +19,11 @@
     <div class="field">
       <label for="feedback-topic">Topic</label>
       <select id="feedback-topic" name="topic">
+        <option value="General feedback">General feedback</option>
         <option value="Episode 3 lesson">Episode 3 lesson</option>
         <option value="Code review">Code review</option>
         <option value="Security">Security</option>
         <option value="Deployment">Deployment</option>
-        <option value="General feedback">General feedback</option>
       </select>
     </div>
     <div class="field">
@@ -89,13 +89,11 @@
 
   const form = document.getElementById('feedback-form');
   const list = document.getElementById('feedback-list');
-  const topics = new Set([
-    'Episode 3 lesson',
-    'Code review',
-    'Security',
-    'Deployment',
-    'General feedback',
-  ]);
+  const topicSelect = document.getElementById('feedback-topic');
+  const topics = topicSelect instanceof HTMLSelectElement
+    ? new Set(Array.from(topicSelect.options, (option) => option.value))
+    : new Set();
+  const fallbackTopic = topicSelect instanceof HTMLSelectElement ? topicSelect.value : '';
 
   function render() {
     const submissions = loadSubmissions();
@@ -105,9 +103,10 @@
       .map((s) => {
         const html = renderMarkdown(s.message || '');
         const who = s.name || 'Anonymous';
-        const topic = topics.has(s.topic) ? s.topic : 'General feedback';
+        const topic = topics.has(s.topic) ? s.topic : fallbackTopic;
+        const topicMeta = topic ? `${topic} · ` : '';
         const when = new Date(s.submittedAt).toLocaleString();
-        return `<div class="feedback-item"><div class="meta">${who} · ${topic} · ${when}</div>${html}</div>`;
+        return `<div class="feedback-item"><div class="meta">${who} · ${topicMeta}${when}</div>${html}</div>`;
       })
       .join('');
   }
